@@ -1,0 +1,100 @@
+version: '3'
+
+env:
+  ACCESS_LOG_PATH: /path/to/access_log
+  SLOW_QUERY_LOG_PATH: /path/to/slow_query_log
+
+tasks:
+  default:
+    cmd: task --list
+
+  deploy:
+    desc: 指定したブランチをチェックアウトし、アプリケーションをビルド・デプロイし、サービスを再起動する
+    dir: send-to-slack
+    cmds:
+      - go run main.go post --header-title 'サービスのデプロイ' --message 'サービスをデプロイします...'
+      - task: _stop-services
+      - task: _checkout
+      - task: _build
+      - task: _start-services
+      - go run main.go post --no-header --message 'サービスのデプロイが完了しました。'
+
+  deploy-local:
+    desc: アプリケーションをビルド・デプロイし、サービスを再起動する（チェックアウトはしません）
+    dir: send-to-slack
+    cmds:
+      - go run main.go post --header-title 'サービスのデプロイ' --message 'サービスをデプロイします...'
+      - task: _stop-services
+      - task: _build
+      - task: _start-services
+      - go run main.go post --no-header --message 'サービスのデプロイが完了しました。'
+
+  restart-services:
+    desc: 関連するサービスを再起動する
+    dir: send-to-slack
+    cmds:
+      - go run main.go post --header-title 'サービスの再起動' --message 'サービスを再起動します...'
+      - task: _stop-services
+      - task: _start-services
+      - go run main.go post --no-header --message 'サービスの再起動が完了しました。'
+
+  analyze-logs:
+    desc: アクセスログとスロークエリログを解析する
+    cmds:
+      - task: analyze-access-log
+      - task: analyze-slow-query-log
+
+  analyze-access-log:
+    desc: アクセスログを解析する
+    dir: send-to-slack
+    cmds:
+      - echo 'アクセスログの解析を実行します...'
+      - sudo cat "${ACCESS_LOG_PATH}" | alp ltsv | tee /tmp/alp.txt
+      - go run main.go upload --header-title 'アクセスログの解析結果' --filepath /tmp/alp.txt
+
+  analyze-slow-query-log:
+    desc: スロークエリログを解析する
+    dir: send-to-slack
+    cmds:
+      - echo 'スロークエリログの解析を実行します...'
+      - sudo pt-query-digest "${SLOW_QUERY_LOG_PATH}" | tee /tmp/pt-query-digest.txt
+      - go run main.go upload --header-title 'スロークエリログの解析結果' --filepath /tmp/pt-query-digest.txt
+
+  _checkout:
+    cmds:
+      - echo 'ブランチ {{.CLI_ARGS}} をチェックアウトします...'
+      - |
+        if [ "{{.CLI_ARGS}}" == "" ]; then
+          echo 'Error: ブランチ名を指定してください' 1>&2
+          echo 'Usage: task <TASK_NAME> -- <BRANCH_NAME>' 1>&2
+          exit 1
+        fi
+      - git fetch --prune
+      - git checkout origin/{{.CLI_ARGS}}
+
+  _build:
+    cmds:
+      - echo 'アプリケーションをビルドします...'
+      - echo pip install -r requirements.txt
+
+  _logrotate:
+    cmds:
+      - echo 'アクセスログとスロークエリログを初期化します...'
+      - echo '' | sudo tee "${ACCESS_LOG_PATH}"
+      - echo '' | sudo tee "${SLOW_QUERY_LOG_PATH}"
+
+  _stop-services:
+    dir: send-to-slack
+    cmds:
+      - echo 'サービスを停止します...'
+      - echo sudo systemctl stop nginx
+      - echo sudo systemctl stop webapp-isucon
+      - echo sudo systemctl stop mysql
+
+  _start-services:
+    dir: send-to-slack
+    cmds:
+      - echo 'サービスを開始します...'
+      - echo sudo systemctl start mysql
+      - echo sudo systemctl start webapp-isucon
+      - echo sudo systemctl start nginx
