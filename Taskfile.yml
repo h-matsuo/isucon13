@@ -40,7 +40,7 @@ tasks:
       - task: _start-services
       - go run main.go post --no-header --message 'サービスの再起動が完了しました。'
 
-  analyze-logs:
+  analyze:
     desc: アクセスログとスロークエリログを解析する
     cmds:
       - task: analyze-access-log
