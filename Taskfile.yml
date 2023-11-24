@@ -16,6 +16,7 @@ tasks:
       - task: _stop-services
       - task: _checkout
       - task: _build
+      - task: _logrotate
       - task: _start-services
       - go run main.go post --no-header --message 'サービスのデプロイが完了しました。'
 
@@ -26,6 +27,7 @@ tasks:
       - go run main.go post --header-title 'サービスのデプロイ' --message 'サービスをデプロイします...'
       - task: _stop-services
       - task: _build
+      - task: _logrotate
       - task: _start-services
       - go run main.go post --no-header --message 'サービスのデプロイが完了しました。'
 
