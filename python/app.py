@@ -1627,16 +1627,18 @@ def fill_livestream_response(
     c.execute(sql, [livestream_model.id])
     rows = c.fetchall()
 
-    tags = []
-    for row in rows:
-        livestream_tag = models.LiveStreamTagModel(**row)
-        sql = "SELECT * FROM tags WHERE id = %s"
-        c.execute(sql, [livestream_tag.tag_id])
-        tag_row = c.fetchone()
-        if not tag_row:
-            raise HttpException("failed to get tags", INTERNAL_SERVER_ERROR)
-        tag = models.Tag(**tag_row)
-        tags.append(tag)
+    livestream_tag_ids = [row["tag_id"] for row in rows]
+    sql = "SELECT * FROM tags WHERE id IN (%s)"
+    in_formats = ",".join(["%s"] * len(livestream_tag_ids))
+    sql = sql % in_formats
+    # debug
+    print("[DEBUG] [Mattsun]")
+    print(sql)
+    c.execute(sql, livestream_tag_ids)
+    rows = c.fetchall()
+    if rows is None:
+        raise HttpException("failed to get tags", INTERNAL_SERVER_ERROR)
+    tags = [models.Tag(**row) for row in rows]
 
     livestream = models.LiveStream(
         id=livestream_model.id,
