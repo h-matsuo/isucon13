@@ -1,8 +1,8 @@
 version: '3'
 
 env:
-  ACCESS_LOG_PATH: /path/to/access_log
-  SLOW_QUERY_LOG_PATH: /path/to/slow_query_log
+  ACCESS_LOG_PATH: /var/log/nginx/access.log
+  SLOW_QUERY_LOG_PATH: /var/log/mysql/slow-query.log
 
 tasks:
   default:
@@ -15,7 +15,7 @@ tasks:
       - go run main.go post --header-title 'サービスのデプロイ' --message 'サービスをデプロイします...'
       - task: _stop-services
       - task: _checkout
-      - task: _build
+      # - task: _build
       - task: _logrotate
       - task: _start-services
       - go run main.go post --no-header --message 'サービスのデプロイが完了しました。'
@@ -26,7 +26,7 @@ tasks:
     cmds:
       - go run main.go post --header-title 'サービスのデプロイ' --message 'サービスをデプロイします...'
       - task: _stop-services
-      - task: _build
+      # - task: _build
       - task: _logrotate
       - task: _start-services
       - go run main.go post --no-header --message 'サービスのデプロイが完了しました。'
@@ -74,10 +74,10 @@ tasks:
       - git fetch --prune
       - git checkout origin/{{.CLI_ARGS}}
 
-  _build:
-    cmds:
-      - echo 'アプリケーションをビルドします...'
-      - echo pip install -r requirements.txt
+  # _build:
+  #   cmds:
+  #     - echo 'アプリケーションをビルドします...'
+  #     - echo pip install -r requirements.txt
 
   _logrotate:
     cmds:
@@ -89,14 +89,16 @@ tasks:
     dir: send-to-slack
     cmds:
       - echo 'サービスを停止します...'
-      - echo sudo systemctl stop nginx
-      - echo sudo systemctl stop webapp-isucon
-      - echo sudo systemctl stop mysql
+      - sudo systemctl stop pdns
+      - sudo systemctl stop nginx
+      - sudo systemctl stop isupipe-python
+      - sudo systemctl stop mysql
 
   _start-services:
     dir: send-to-slack
     cmds:
       - echo 'サービスを開始します...'
-      - echo sudo systemctl start mysql
-      - echo sudo systemctl start webapp-isucon
-      - echo sudo systemctl start nginx
+      - sudo systemctl start mysql
+      - sudo systemctl start isupipe-python
+      - sudo systemctl start nginx
+      - sudo systemctl start pdns
