@@ -1675,10 +1675,6 @@ def fill_user_response(
 def get_request_json() -> Any:
     return json.loads(request.get_data().decode())
 
-def count_matching_text(text, pattern):
-    # パターンを含むテキストの数をカウントする
-    return sum(1 for text in texts if pattern in text)
-
 class HttpException(Exception):
     status_code = 500
 
