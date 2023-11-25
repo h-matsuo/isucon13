@@ -511,9 +511,8 @@ def post_livecomment_handler(livestream_id: int) -> tuple[dict[str, Any], int]:
             raise HttpException("failed to get NG words", INTERNAL_SERVER_ERROR)
 
         for ng_word in ng_words:
-            hit_spam = count_matching_texts(req["comment"], ng_word["word"])
             # app.logger.info(f"[hitSpam={hit_spam}] comment = {req['comment']}")
-            if hit_spam >= 1:
+            if ng_word["word"] in req["comment"]:
                 raise HttpException("このコメントがスパム判定されました", BAD_REQUEST)
 
         now = int(datetime.now().timestamp())
@@ -1676,7 +1675,7 @@ def fill_user_response(
 def get_request_json() -> Any:
     return json.loads(request.get_data().decode())
 
-def count_matching_texts(texts, pattern):
+def count_matching_text(text, pattern):
     # パターンを含むテキストの数をカウントする
     return sum(1 for text in texts if pattern in text)
 
