@@ -1610,20 +1610,18 @@ def fill_livestream_response(
 
     owner = fill_user_response(c, owner_model)
 
-    sql = "SELECT * FROM livestream_tags WHERE livestream_id = %s"
+    sql = """
+            SELECT
+                t.id AS id,
+                t.name AS name
+            FROM livestream_tags AS lt
+            INNER JOIN tags AS t
+                ON lt.tag_id = t.id
+            WHERE lt.livestream_id = %s
+        """
     c.execute(sql, [livestream_model.id])
     rows = c.fetchall()
-
-    tags = []
-    for row in rows:
-        livestream_tag = models.LiveStreamTagModel(**row)
-        sql = "SELECT * FROM tags WHERE id = %s"
-        c.execute(sql, [livestream_tag.tag_id])
-        tag_row = c.fetchone()
-        if not tag_row:
-            raise HttpException("failed to get tags", INTERNAL_SERVER_ERROR)
-        tag = models.Tag(**tag_row)
-        tags.append(tag)
+    tags = [models.Tag(**row) for row in rows]
 
     livestream = models.LiveStream(
         id=livestream_model.id,
