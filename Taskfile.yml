@@ -51,7 +51,7 @@ tasks:
     dir: send-to-slack
     cmds:
       - echo 'アクセスログの解析を実行します...'
-      - sudo cat "${ACCESS_LOG_PATH}" | alp ltsv --sort sum --reverse | tee /tmp/alp.txt
+      - sudo cat "${ACCESS_LOG_PATH}" | alp ltsv -m '/api/livestream/.+/reaction,/api/livestream/.+/livecomment,/api/livestream/.+/statistics,/api/user/.+/statistics,/api/livestream/.+/moderate,/api/user/.+/icon,/api/livestream/.+/report,/api/livestream/.+/ngwords' --sort sum --reverse | tee /tmp/alp.txt
       - go run main.go upload --header-title 'アクセスログの解析結果' --filepath /tmp/alp.txt
 
   analyze-slow-query-log:
