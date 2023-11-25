@@ -106,4 +106,4 @@ CREATE TABLE `reactions` (
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
 
 -- index追加
-ALTER TABLE `livecomments` ADD INDEX livecomments_order_idx ON livecomments(`created_at` DESC);
+ALTER TABLE `livecomments` ADD INDEX livecomments_order_idx (`created_at` DESC);
