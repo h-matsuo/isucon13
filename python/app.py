@@ -459,10 +459,7 @@ def get_livecomments_handler(livestream_id: int) -> tuple[list[dict[str, Any]], 
 
         livecomment_models = [models.LiveCommentModel(**row) for row in rows]
 
-        livecomments: list[dict[str, Any]] = []
-        for livecomment_model in livecomment_models:
-            livecomment = fill_livecomment_response(c, livecomment_model)
-            livecomments.append(asdict(livecomment))
+        livecomments: list[dict[str, Any]] = [asdict(livecomment_model) for livecomment_model in fill_livecomment_response_list(c, livecomment_models)]
 
         return livecomments, OK
     except DatabaseError as err:
@@ -1492,40 +1489,62 @@ def verify_user_session() -> None:
 
     return
 
-
 def fill_livecomment_response(
     c: mysql.connector.cursor.MySQLCursorDict,
     livecomment_model: models.LiveCommentModel,
 ) -> models.LiveComment:
-    sql = "SELECT * FROM users WHERE id = %s"
-    c.execute(sql, [livecomment_model.user_id])
-    row = c.fetchone()
-    if not row:
+    return fill_livecomment_response_list(c, [livecomment_model])[0]
+
+def fill_livecomment_response_list(
+    c: mysql.connector.cursor.MySQLCursorDict,
+    livecomment_model_list: [models.LiveCommentModel],
+) -> [models.LiveComment]:
+    if len(livecomment_model_list) < 1:
+        return []
+
+    sql = "SELECT * FROM users WHERE id IN (%s)"
+    in_formats =  ",".join(["%s"] * len(livecomment_model_list))
+    sql = sql % in_formats
+    c.execute(sql, [livecomment_model.user_id for livecomment_model in livecomment_model_list])
+    rows = c.fetchall()
+    if len(rows) < 1:
         app.logger.error("failed to get comment_owner_model")
         raise HttpException("failed to get comment_owner_model", INTERNAL_SERVER_ERROR)
-    comment_owner_model = models.UserModel(**row)
+    comment_owner_models = [models.UserModel(**row) for row in rows]
 
-    comment_owner = fill_user_response(c, comment_owner_model)
+    comment_owners = {}
+    for comment_owner_model in comment_owner_models:
+        comment_owner = fill_user_response(c, comment_owner_model)
+        comment_owners[comment_owner.id] = comment_owner
 
-    sql = "SELECT * FROM livestreams WHERE id = %s"
-    c.execute(sql, [livecomment_model.livestream_id])
-    row = c.fetchone()
-    if not row:
+    sql = "SELECT * FROM livestreams WHERE id IN (%s)"
+    sql = sql % in_formats
+    c.execute(sql, [livecomment_model.livestream_id for livecomment_model in livecomment_model_list])
+    rows = c.fetchall()
+    if len(rows) < 1:
         app.logger.error("failed to get livestream_model")
         raise HttpException("failed to get livestream_model", INTERNAL_SERVER_ERROR)
 
-    livestream_model = models.LiveStreamModel(**row)
+    livestream_models = [models.LiveStreamModel(**row) for row in rows]
 
-    livestream = fill_livestream_response(c, livestream_model)
+    livestreams = {}
+    for livestream_model in livestream_models:
+        livestream_model = fill_livestream_response(c, livestream_model)
+        livestreams[livestream_model.id] = livestream_model
 
-    return models.LiveComment(
-        id=livecomment_model.id,
-        user=comment_owner,
-        livestream=livestream,
-        comment=livecomment_model.comment,
-        tip=livecomment_model.tip,
-        created_at=livecomment_model.created_at,
-    )
+    livecomment_response_list = []
+    for livecomment_model in livecomment_model_list:
+        livecomment_response = models.LiveComment(
+            id=livecomment_model.id,
+            user=comment_owners[livecomment_model.user_id],
+            livestream=livestreams[livecomment_model.livestream_id],
+            comment=livecomment_model.comment,
+            tip=livecomment_model.tip,
+            created_at=livecomment_model.created_at,
+        )
+        livecomment_response_list.append(livecomment_response)
+
+    return livecomment_response_list
 
 
 def fill_reaction_response(
