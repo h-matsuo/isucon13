@@ -58,8 +58,6 @@ CREATE TABLE `livestream_tags` (
   `tag_id` BIGINT NOT NULL
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
 
-ALTER TABLE `livestream_tags` ADD INDEX [idx__livestream_tags__livestream_id] (`livestream_id`)
-
 -- ライブ配信視聴履歴
 CREATE TABLE `livestream_viewers_history` (
   `id` BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -107,5 +105,15 @@ CREATE TABLE `reactions` (
   `created_at` BIGINT NOT NULL
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
 
--- index追加
-ALTER TABLE `livecomments` ADD INDEX livecomments_order_idx (`created_at` DESC);
+--
+alter table livestream_tags add index idx_livestream_id (livestream_id);
+alter table livestream_tags add index idx_tag_id_livestream_id (tag_id, livestream_id);
+alter table livestreams add index idx_user_id (user_id);
+alter table icons add index idx_user_id (user_id);
+alter table livecomments add index idx_livestream_id (livestream_id);
+alter table themes add index idx_user_id (user_id);
+alter table reactions add index idx_livestream_id(livestream_id,created_at);
+alter table livestream_viewers_history add index idx_user_id_livestream_id  (user_id, livestream_id);
+alter table ng_words add index idx_livestream_id_user_id (livestream_id,user_id);
+alter table reservation_slots add index idx_end_at (end_at);
+alter table livecomment_reports add index idx_livestream_id(livestream_id);
