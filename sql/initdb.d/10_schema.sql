@@ -117,5 +117,5 @@ alter table livestream_viewers_history add index idx_user_id_livestream_id  (use
 alter table ng_words add index idx_livestream_id_user_id (livestream_id,user_id);
 alter table reservation_slots add index idx_end_at (end_at);
 alter table livecomment_reports add index idx_livestream_id(livestream_id);
-ALTER TABLE `livestream_tags` ADD INDEX [idx__livestream_tags__livestream_id] (`livestream_id`);
+ALTER TABLE `livestream_tags` ADD INDEX idx__livestream_tags__livestream_id (`livestream_id`);
 ALTER TABLE `livecomments` ADD INDEX livecomments_order_idx (`created_at` DESC);
