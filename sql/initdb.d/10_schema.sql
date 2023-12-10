@@ -122,5 +122,21 @@ ALTER TABLE `livecomments` ADD INDEX livecomments_order_idx (`created_at` DESC);
 
 -- トリガー仕込み
 ALTER TABLE icons ADD icon_hash VARCHAR(255) AFTER user_id;
-CREATE TRIGGER update_icons BEFORE UPDATE ON icons FOR EACH ROW BEGIN SET NEW.icon_hash = SHA2(NEW.image, 256); END;
-CREATE TRIGGER insert_icons BEFORE INSERT ON icons FOR EACH ROW BEGIN SET NEW.icon_hash = SHA2(NEW.image, 256); END;
+
+DELIMITER $$
+CREATE TRIGGER update_icons
+BEFORE UPDATE ON icons
+FOR EACH ROW
+BEGIN
+SET NEW.icon_hash = SHA2(NEW.image, 256);
+END
+$$
+
+DELIMITER $$
+CREATE TRIGGER insert_icons
+BEFORE INSERT ON icons
+FOR EACH ROW
+BEGIN
+SET NEW.icon_hash = SHA2(NEW.image, 256);
+END
+$$
