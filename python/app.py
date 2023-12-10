@@ -266,29 +266,23 @@ def search_livestreams_handler() -> tuple[list[dict[str, Any]], int]:
                 raise HttpException("failed to get tags", INTERNAL_SERVER_ERROR)
             tag_ids = [row["id"] for row in rows]
 
-            sql = "SELECT * FROM livestream_tags WHERE tag_id IN (%s) ORDER BY livestream_id DESC"  # idかtag_idか要確認
+            sql = """
+                    SELECT ls.* 
+                    FROM livestreams AS ls
+                    JOIN livestream_tags AS lst 
+                    ON ls.id = lst.livestream_id
+                    WHERE lst.tag_id IN (%s)
+                    ORDER BY ls.id DESC
+                """
             in_formats = ",".join(["%s"] * len(tag_ids))
             sql = sql % in_formats
             c.execute(sql, tag_ids)
             rows = c.fetchall()
             if rows is None:
                 raise HttpException(
-                    "failed to get keyTaggedLivestream", INTERNAL_SERVER_ERROR
+                    "failed to get Livestream", INTERNAL_SERVER_ERROR
                 )
-            key_tagged_livestreams = [models.LiveStreamTagModel(**row) for row in rows]
-
-            for key_tagged_livestream in key_tagged_livestreams:
-                sql = "SELECT * FROM livestreams WHERE id = %s"
-                c.execute(sql, [key_tagged_livestream.livestream_id])
-                row = c.fetchone()
-                if row is None:
-                    raise HttpException(
-                        "failed to get livestream", INTERNAL_SERVER_ERROR
-                    )
-
-                livestream_model = models.LiveStreamModel(**row)
-
-                livestream_models.append(livestream_model)
+            livestream_models = [models.LiveStreamModel(**row) for row in rows]
 
         else:
             # 検索条件なし
