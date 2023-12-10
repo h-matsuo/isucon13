@@ -119,3 +119,8 @@ alter table reservation_slots add index idx_end_at (end_at);
 alter table livecomment_reports add index idx_livestream_id(livestream_id);
 ALTER TABLE `livestream_tags` ADD INDEX idx__livestream_tags__livestream_id (`livestream_id`);
 ALTER TABLE `livecomments` ADD INDEX livecomments_order_idx (`created_at` DESC);
+
+-- トリガー仕込み
+ALTER TABLE icons ADD icon_hash VARCHAR(255) AFTER user_id;
+CREATE TRIGGER update_icons BEFORE UPDATE ON icons FOR EACH ROW BEGIN SET NEW.icon_hash = SHA2(NEW.image, 256); END;
+CREATE TRIGGER insert_icons BEFORE INSERT ON icons FOR EACH ROW BEGIN SET NEW.icon_hash = SHA2(NEW.image, 256); END;

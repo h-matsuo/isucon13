@@ -267,9 +267,9 @@ def search_livestreams_handler() -> tuple[list[dict[str, Any]], int]:
             tag_ids = [row["id"] for row in rows]
 
             sql = """
-                    SELECT ls.* 
+                    SELECT ls.*
                     FROM livestreams AS ls
-                    JOIN livestream_tags AS lst 
+                    JOIN livestream_tags AS lst
                     ON ls.id = lst.livestream_id
                     WHERE lst.tag_id IN (%s)
                     ORDER BY ls.id DESC
@@ -1641,14 +1641,15 @@ def fill_user_response(
         raise HttpException("not found", NOT_FOUND)
     theme_model = models.ThemeModel(**row)
 
-    sql = "SELECT image FROM icons WHERE user_id = %s"
+    sql = "SELECT image, icon_hash FROM icons WHERE user_id = %s"
     c.execute(sql, [user_model.id])
     image_row = c.fetchone()
     if not image_row:
         image = open(Settings.FALLBACK_IMAGE, "rb").read()
+        icon_hash = "d9f8294e9d895f81ce62e73dc7d5dff862a4fa40bd4e0fecf53f7526a8edcac0"
     else:
         image = io.BytesIO(image_row["image"]).getvalue()
-    icon_hash = hashlib.sha256(image).hexdigest()
+        icon_hash = image_row["icon_hash"]
 
     user = models.User(
         id=user_model.id,
